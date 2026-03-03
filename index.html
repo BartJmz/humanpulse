@@ -132,18 +132,59 @@
       "sb_publishable_sVkySTg1ue5mEJgkQvG_zA_6yYr6ruW"
     );
 
-    let currentVote = localStorage.getItem("mood_vote");
-
-    async function loadCounts() {
-      const { data } = await supabase
-        .from("mood_counts")
-        .select("*")
-        .order("count", { ascending: false });
-
-      render(data);
+    // 🔐 Token único consistente
+    function getUserToken() {
+      let token = localStorage.getItem("mood_token");
+      if (!token) {
+        token = crypto.randomUUID();
+        localStorage.setItem("mood_token", token);
+      }
+      return token;
     }
 
+    const userToken = getUserToken();
+
+    let currentVote = null;
+
+    // --------------------
+    // Cargar votos últimas 24h
+    // --------------------
+    async function loadCounts() {
+
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      const { data } = await supabase
+        .from("mood_votes")
+        .select("mood")
+        .gte("created_at", since);
+
+      const grouped = {
+        sad: 0,
+        neutral: 0,
+        hopeful: 0,
+        calm: 0,
+        angry: 0
+      };
+
+      data?.forEach(v => {
+        grouped[v.mood]++;
+      });
+
+      const formatted = Object.keys(grouped).map(key => ({
+        mood: key,
+        count: grouped[key]
+      }));
+
+      formatted.sort((a, b) => b.count - a.count);
+
+      render(formatted);
+    }
+
+    // --------------------
+    // Render bonito
+    // --------------------
     function render(data) {
+
       const container = document.getElementById("counts");
 
       const total = data.reduce((sum, m) => sum + m.count, 0);
@@ -161,10 +202,13 @@
       };
 
       container.innerHTML = data.map(m => {
+
         const percentage = total ? (m.count / total) * 100 : 0;
-        const dominantClass = m.mood === maxMood.mood && m.count > 0
-          ? "dominant"
-          : "";
+
+        const dominantClass =
+          m.mood === maxMood.mood && m.count > 0
+            ? "dominant"
+            : "";
 
         return `
       <div class="stat-card ${dominantClass}">
@@ -180,47 +224,65 @@
       }).join("");
     }
 
-    window.vote = async function (mood) {
-
-      if (currentVote === mood) return;
-
-      if (currentVote) {
-        await supabase.rpc("decrement_mood", { mood_name: currentVote });
-      }
-
-      await supabase.rpc("increment_mood", { mood_name: mood });
-
-      localStorage.setItem("mood_vote", mood);
-      currentVote = mood;
-
-      highlightSelected();
-    }
-
+    // --------------------
+    // Resaltar mood actual
+    // --------------------
     function highlightSelected() {
+      const vote = localStorage.getItem("mood_vote");
       document.querySelectorAll(".moods button").forEach(btn => {
         btn.classList.remove("active");
       });
 
       const selected = document.querySelector(
-        `.moods button[onclick="vote('${currentVote}')"]`
+        `.moods button[onclick="vote('${vote}')"]`
       );
-
       if (selected) selected.classList.add("active");
     }
 
+    // --------------------
+    // Votar
+    // --------------------
+    window.vote = async function (mood) {
+      const token = getUserToken();
+
+      try {
+        await supabase.rpc("vote_mood", {
+          _mood: mood,
+          _user_token: token
+        });
+
+        // Guardamos localmente para resaltar el botón
+        localStorage.setItem("mood_vote", mood);
+
+        // Actualizamos contadores y resaltado
+        currentVote = mood;
+        loadCounts();
+        highlightSelected();
+
+      } catch (err) {
+        console.error("Error votando:", err);
+      }
+    };
+    // --------------------
+    // Realtime
+    // --------------------
     supabase
       .channel('mood_changes')
       .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'mood_counts' },
+        { event: 'INSERT', schema: 'public', table: 'mood_votes' },
+        () => loadCounts()
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'mood_votes' },
         () => loadCounts()
       )
       .subscribe();
 
+    // Init
     loadCounts();
+    highlightCurrentMood();
 
-    highlightSelected();
   </script>
-
 </body>
 
 </html>
