@@ -1,103 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Global Mood</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    body {
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
       margin: 0;
-      height: 100vh;
+      padding: 0;
+    }
+
+    :root {
+      --bg-top: #1a3a6b;
+      --bg-bottom: #4ab8d8;
+      --glass: rgba(255, 255, 255, 0.10);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --white: #ffffff;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      width: 100%;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+      background-attachment: fixed;
+      color: var(--white);
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, #2a5298, #6dd5ed);
-      color: white;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px 16px;
     }
 
+    /* ---- Title ---- */
     h2 {
+      font-size: clamp(1.2rem, 5vw, 1.6rem);
       font-weight: 300;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 28px;
+      text-align: center;
     }
 
+    /* ---- Mood buttons ---- */
     .moods {
       display: flex;
-      gap: 20px;
-      padding: 20px 30px;
-      border-radius: 20px;
-      backdrop-filter: blur(10px);
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      flex-wrap: nowrap;
+      gap: 0;
+      justify-content: space-around;
+      padding: 20px 12px;
+      border-radius: 24px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 520px;
     }
 
     .moods button {
-      font-size: 42px;
+      font-size: clamp(34px, 12vw, 52px);
       background: none;
       border: none;
       cursor: pointer;
-      transition: all .25s ease;
+      transition: transform .25s ease, opacity .25s ease, filter .25s ease;
       opacity: 0.6;
+      padding: 8px;
+      flex: 1;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
-    .moods button:hover {
+    .moods button:hover,
+    .moods button:focus-visible {
       transform: scale(1.2);
       opacity: 1;
+      outline: none;
     }
 
     .moods button.active {
       transform: scale(1.35);
       opacity: 1;
-      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+      filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.85));
     }
 
-    #counts {
-      margin-top: 30px;
-      font-size: 16px;
-      opacity: 0.85;
-      text-align: center;
-    }
-
-
+    /* ---- Stats ---- */
     .stats {
-      margin-top: 40px;
-      width: 320px;
+      width: 100%;
+      max-width: 520px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .stat-card {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 12px 16px;
-      border-radius: 14px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      padding: clamp(10px, 3vw, 14px) clamp(12px, 4vw, 18px);
+      border-radius: 16px;
       backdrop-filter: blur(8px);
-      transition: all .3s ease;
+      -webkit-backdrop-filter: blur(8px);
+      transition: transform .3s ease, background .3s ease;
     }
 
     .stat-card.dominant {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.20);
+      transform: scale(1.03);
+      border-color: rgba(255, 255, 255, 0.30);
     }
 
     .stat-header {
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
-      margin-bottom: 6px;
+      align-items: center;
+      font-size: clamp(13px, 3.5vw, 15px);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: capitalize;
     }
 
     .stat-count {
-      font-weight: bold;
-      font-size: 16px;
+      font-weight: 600;
+      font-size: clamp(14px, 4vw, 17px);
+      opacity: 0.95;
     }
 
     .stat-bar {
       height: 6px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
       overflow: hidden;
     }
 
@@ -105,183 +155,129 @@
       height: 100%;
       background: white;
       width: 0%;
-      transition: width .6s ease;
+      border-radius: 6px;
+      transition: width .7s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* ---- Footer label ---- */
+    .footer {
+      margin-top: 20px;
+      font-size: 11px;
+      opacity: 0.4;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
     }
   </style>
 </head>
 
 <body>
 
-  <h2>Hoy estamos así...</h2>
+  <h2>Hoy estamos así…</h2>
 
   <div class="moods">
-    <button onclick="vote('sad')">😞</button>
-    <button onclick="vote('neutral')">😐</button>
-    <button onclick="vote('hopeful')">🙂</button>
-    <button onclick="vote('calm')">😌</button>
-    <button onclick="vote('angry')">😠</button>
+    <button onclick="vote('sad')" aria-label="Triste">😞</button>
+    <button onclick="vote('neutral')" aria-label="Neutro">😐</button>
+    <button onclick="vote('hopeful')" aria-label="Esperanzado">🙂</button>
+    <button onclick="vote('calm')" aria-label="Calmado">😌</button>
+    <button onclick="vote('angry')" aria-label="Enojado">😠</button>
   </div>
 
   <div id="counts" class="stats"></div>
 
+  <p class="footer">Últimas 24 horas · en tiempo real</p>
+
   <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
     const supabase = createClient(
       "https://rrsvgtcfenycanestfcc.supabase.co",
       "sb_publishable_sVkySTg1ue5mEJgkQvG_zA_6yYr6ruW"
     );
 
-    // 🔐 Token único consistente
     function getUserToken() {
       let token = localStorage.getItem("mood_token");
-      if (!token) {
-        token = crypto.randomUUID();
-        localStorage.setItem("mood_token", token);
-      }
+      if (!token) { token = crypto.randomUUID(); localStorage.setItem("mood_token", token); }
       return token;
     }
 
-    const userToken = getUserToken();
+    const emojiMap = { sad: "😞", neutral: "😐", hopeful: "🙂", calm: "😌", angry: "😠" };
 
-    let currentVote = null;
-
-    // --------------------
-    // Cargar votos últimas 24h
-    // --------------------
     async function loadCounts() {
-
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await supabase.from("mood_votes").select("mood").gte("created_at", since);
 
-      const { data } = await supabase
-        .from("mood_votes")
-        .select("mood")
-        .gte("created_at", since);
+      const grouped = { sad: 0, neutral: 0, hopeful: 0, calm: 0, angry: 0 };
+      data?.forEach(v => { grouped[v.mood]++; });
 
-      const grouped = {
-        sad: 0,
-        neutral: 0,
-        hopeful: 0,
-        calm: 0,
-        angry: 0
-      };
-
-      data?.forEach(v => {
-        grouped[v.mood]++;
-      });
-
-      const formatted = Object.keys(grouped).map(key => ({
-        mood: key,
-        count: grouped[key]
-      }));
-
-      formatted.sort((a, b) => b.count - a.count);
+      const formatted = Object.entries(grouped)
+        .map(([mood, count]) => ({ mood, count }))
+        .sort((a, b) => b.count - a.count);
 
       render(formatted);
     }
 
-    // --------------------
-    // Render bonito
-    // --------------------
     function render(data) {
-
       const container = document.getElementById("counts");
-
-      const total = data.reduce((sum, m) => sum + m.count, 0);
-
-      const maxMood = data.reduce((prev, current) =>
-        current.count > prev.count ? current : prev
-        , data[0]);
-
-      const emojiMap = {
-        sad: "😞",
-        neutral: "😐",
-        hopeful: "🙂",
-        calm: "😌",
-        angry: "😠"
-      };
+      const total = data.reduce((s, m) => s + m.count, 0);
+      const maxCount = data[0]?.count ?? 0;
 
       container.innerHTML = data.map(m => {
-
-        const percentage = total ? (m.count / total) * 100 : 0;
-
-        const dominantClass =
-          m.mood === maxMood.mood && m.count > 0
-            ? "dominant"
-            : "";
-
+        const pct = total ? (m.count / total * 100).toFixed(1) : 0;
+        const dominant = m.count === maxCount && m.count > 0 ? "dominant" : "";
         return `
-      <div class="stat-card ${dominantClass}">
-        <div class="stat-header">
-          <span>${emojiMap[m.mood]} ${m.mood}</span>
-          <span class="stat-count">${m.count}</span>
-        </div>
-        <div class="stat-bar">
-          <div class="stat-bar-fill" style="width:${percentage}%"></div>
-        </div>
-      </div>
-    `;
+          <div class="stat-card ${dominant}">
+            <div class="stat-header">
+              <span class="stat-label">${emojiMap[m.mood]} ${m.mood}</span>
+              <span class="stat-count">${m.count}</span>
+            </div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" style="width:${pct}%"></div>
+            </div>
+          </div>`;
       }).join("");
     }
 
-    // --------------------
-    // Resaltar mood actual
-    // --------------------
     function highlightSelected() {
       const vote = localStorage.getItem("mood_vote");
-      document.querySelectorAll(".moods button").forEach(btn => {
-        btn.classList.remove("active");
-      });
-
-      const selected = document.querySelector(
-        `.moods button[onclick="vote('${vote}')"]`
-      );
-      if (selected) selected.classList.add("active");
+      document.querySelectorAll(".moods button").forEach(btn => btn.classList.remove("active"));
+      const sel = document.querySelector(`.moods button[onclick="vote('${vote}')"]`);
+      if (sel) sel.classList.add("active");
     }
 
-    // --------------------
-    // Votar
-    // --------------------
     window.vote = async function (mood) {
-      const token = getUserToken();
-
       try {
-        await supabase.rpc("vote_mood", {
-          _mood: mood,
-          _user_token: token
-        });
-
-        // Guardamos localmente para resaltar el botón
+        await supabase.rpc("vote_mood", { _mood: mood, _user_token: getUserToken() });
         localStorage.setItem("mood_vote", mood);
-
-        // Actualizamos contadores y resaltado
-        currentVote = mood;
         loadCounts();
         highlightSelected();
-
-      } catch (err) {
-        console.error("Error votando:", err);
-      }
+      } catch (err) { console.error("Error votando:", err); }
     };
-    // --------------------
-    // Realtime
-    // --------------------
-    supabase
-      .channel('mood_changes')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'mood_votes' },
-        () => loadCounts()
-      )
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'mood_votes' },
-        () => loadCounts()
-      )
+
+    supabase.channel('mood_changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mood_votes' }, loadCounts)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mood_votes' }, loadCounts)
       .subscribe();
 
-    // Init
-    loadCounts();
-    highlightCurrentMood();
+    // Cargar voto existente del usuario desde la BD
+    async function loadUserVote() {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from("mood_votes")
+        .select("mood")
+        .eq("user_token", getUserToken())
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(1);
 
+      if (data && data.length > 0) {
+        localStorage.setItem("mood_vote", data[0].mood);
+      }
+      highlightSelected();
+    }
+
+    loadCounts();
+    loadUserVote();
   </script>
 </body>
 
