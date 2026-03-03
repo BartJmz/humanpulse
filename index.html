@@ -163,6 +163,17 @@
       transition: width .7s cubic-bezier(.4, 0, .2, 1);
     }
 
+    /* ---- Total ---- */
+    .total {
+      font-size: clamp(13px, 3.5vw, 15px);
+      opacity: 0.6;
+      text-align: right;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
     /* ---- Footer label ---- */
     .footer {
       margin-top: 20px;
@@ -187,6 +198,7 @@
     <button onclick="vote('angry')" aria-label="Enojado">😠</button>
   </div>
 
+  <p id="total" class="total"></p>
   <div id="counts" class="stats"></div>
 
   <p class="footer">Últimas 24 horas · en tiempo real</p>
@@ -240,6 +252,8 @@
             </div>
           </div>`;
       }).join("");
+
+      document.getElementById("total").textContent = `${total} voto${total !== 1 ? 's' : ''} hoy`;
     }
 
     function highlightSelected() {
